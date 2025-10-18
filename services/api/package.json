@@ -1,0 +1,17 @@
+{
+  "name": "agente-ia-api",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "ingest": "node src/scripts/ingest.js",
+    "test-agent": "node src/scripts/testAgent.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "pg": "^8.11.3"
+  }
+}

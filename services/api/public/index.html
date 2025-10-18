@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MADIA – CINEMA</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand"><span>MADIA - CINEMA</span></div>
+
+    <button class="tab-btn" data-view="cartelera">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h18v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8zm0-2 2.5-3H12l-2.5 3H3zm7 0 2.5-3H21l-2.5 3H10z"/></svg>
+      </span>
+      Cartelera
+    </button>
+
+    <button class="tab-btn active" data-view="chat">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H7l-3 3V4z"/></svg>
+      </span>
+      Chat
+    </button>
+
+    <button class="tab-btn" data-view="voice">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3zm-7-2h2a5 5 0 0 0 10 0h2a7 7 0 0 1-6 6.93V21h-2v-2.07A7 7 0 0 1 5 12z"/></svg>
+      </span>
+      Voice
+    </button>
+
+    <div class="sidebar-footer">
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="footer-icon">
+        <path d="M3 8h18v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8zm0-2 2.5-3H12l-2.5 3H3zm7 0 2.5-3H21l-2.5 3H10z"/>
+      </svg>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar"></div>
+    <div id="app"></div>
+  </main>
+
+  <!-- Modal para detalle de película (Cartelera) -->
+  <dialog id="modal">
+    <div class="modal-body">
+      <button id="modal-close" class="icon-btn" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3 10.6 10.6 16.9 4.3z"/></svg>
+      </button>
+      <div class="modal-content">
+        <img id="m-poster" alt="Poster" />
+        <div class="m-info">
+          <h2 id="m-title"></h2>
+          <p id="m-meta"></p>
+          <p id="m-overview"></p>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <script type="module" src="app.js" defer></script>
+</body>
+</html>
