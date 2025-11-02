@@ -7,6 +7,26 @@ export function initChat(){
   // MEMORIA CONVERSACIONAL - almacena el historial de la conversacion actual
   let conversationHistory = [];
 
+    // BOTON DE REINICIAR CONVERSACION
+  function createResetButton() {
+    const resetBtn = document.createElement('button');
+    resetBtn.type = 'button';
+    resetBtn.className = 'reset-conversation-btn';
+    resetBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+        <path d="M21 3v5h-5"/>
+        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+        <path d="M3 21v-5h5"/>
+      </svg>
+      <span>Nueva conversación</span>
+    `;
+    resetBtn.onclick = resetConversation;
+    
+    // Insertar el boton antes del formulario
+    form.parentNode.insertBefore(resetBtn, form);
+  }
+  
   // Preguntas de ejemplo
   const examples = [
     'Ejecuta la función para contar exactamente cuántas películas de acción hay en la base de datos',
@@ -28,25 +48,7 @@ export function initChat(){
     });
   }
 
-  // BOTON DE REINICIAR CONVERSACION
-  function createResetButton() {
-    const resetBtn = document.createElement('button');
-    resetBtn.type = 'button';
-    resetBtn.className = 'reset-conversation-btn';
-    resetBtn.innerHTML = `
-      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
-        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-        <path d="M21 3v5h-5"/>
-        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-        <path d="M3 21v-5h5"/>
-      </svg>
-      <span>Nueva conversación</span>
-    `;
-    resetBtn.onclick = resetConversation;
-    
-    // Insertar el boton antes del formulario
-    form.parentNode.insertBefore(resetBtn, form);
-  }
+
 
   function resetConversation() {
     if (conversationHistory.length === 0) return;
@@ -155,27 +157,6 @@ export function initChat(){
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/\n/g, '<br>');
       responseContainer.appendChild(textDiv);
-      
-      // Si hay películas, mostrarlas en tarjetas
-      if (data.peliculas && Array.isArray(data.peliculas) && data.peliculas.length > 0) {
-        const moviesDiv = document.createElement('div');
-        moviesDiv.style.marginTop = '12px';
-        
-        const header = document.createElement('div');
-        header.style.fontSize = '12px';
-        header.style.fontWeight = '600';
-        header.style.color = 'var(--muted)';
-        header.style.marginBottom = '8px';
-        header.textContent = `🎬 ${data.peliculas.length} película${data.peliculas.length > 1 ? 's' : ''} encontrada${data.peliculas.length > 1 ? 's' : ''}:`;
-        moviesDiv.appendChild(header);
-        
-        data.peliculas.forEach(pelicula => {
-          const card = createMovieCard(pelicula);
-          moviesDiv.appendChild(card);
-        });
-        
-        responseContainer.appendChild(moviesDiv);
-      }
       
       // Mostrar herramientas usadas (opcional)
       if (data.usedTools && data.usedTools.length > 0) {
