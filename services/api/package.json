@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
+    "@modelcontextprotocol/sdk": "^1.20.2",
+    "axios": "^1.13.1",
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "pg": "^8.11.3",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "pg": "^8.11.3"
   }
 }

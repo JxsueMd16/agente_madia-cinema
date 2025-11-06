@@ -32,7 +32,7 @@ export function initChat(){
     'Ejecuta la función para contar exactamente cuántas películas de acción hay en la base de datos',
     'Usa la herramienta de estadísticas para obtener información completa del catálogo',
     'Quiero ver algo sobre viajes en el tiempo',
-    '¿Tienes algo familiar y emotivo?',
+    'recomiendame algo familiar y emotivo',
     'Dame un resumen de avengers endgame',
   ];
   

@@ -2,6 +2,8 @@ export function initVoice(){
   const btn = document.getElementById('btn-voice');
   const status = document.getElementById('voice-status');
   const recoEl = document.getElementById('voice-reco');
+  const visualizer = document.getElementById('audio-visualizer');
+  const bars = visualizer.querySelectorAll('.bar');
 
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const synth = window.speechSynthesis;
@@ -12,6 +14,44 @@ export function initVoice(){
     return;
   }
 
+  // Seleccionar mejor voz en español
+  let selectedVoice = null;
+  
+  function loadVoices() {
+    const voices = synth.getVoices();
+    
+    // Buscar voces en español en orden de preferencia
+    const preferredVoices = [
+      'Google español',
+      'Microsoft Helena - Spanish (Spain)',
+      'Paulina',
+      'Monica',
+      'es-ES',
+      'es-MX'
+    ];
+    
+    for (const preferred of preferredVoices) {
+      selectedVoice = voices.find(v => 
+        v.name.includes(preferred) || 
+        v.lang.startsWith('es')
+      );
+      if (selectedVoice) break;
+    }
+    
+    // Fallback: cualquier voz en español
+    if (!selectedVoice) {
+      selectedVoice = voices.find(v => v.lang.startsWith('es'));
+    }
+    
+    console.log('Voz seleccionada:', selectedVoice?.name || 'Predeterminada del sistema');
+  }
+  
+  // Cargar voces al inicio y cuando estén disponibles
+  if (synth.getVoices().length > 0) {
+    loadVoices();
+  }
+  synth.onvoiceschanged = loadVoices;
+
   const rec = new SpeechRecognition();
   rec.lang = 'es-ES';
   rec.interimResults = true;
@@ -20,31 +60,56 @@ export function initVoice(){
 
   let isListening = false;
   let fullTranscript = '';
-  let shouldRestart = false; // Flag para reiniciar automáticamente
+  let shouldRestart = false;
+  let animationInterval = null;
+
+  // Animación de barras
+  function startBarsAnimation() {
+    bars.forEach(bar => bar.classList.add('active'));
+    
+    animationInterval = setInterval(() => {
+      bars.forEach(bar => {
+        const height = Math.random() * 120 + 20;
+        bar.style.height = `${height}px`;
+      });
+    }, 150);
+  }
+
+  function stopBarsAnimation() {
+    bars.forEach(bar => {
+      bar.classList.remove('active');
+      bar.style.height = '20px';
+    });
+    
+    if (animationInterval) {
+      clearInterval(animationInterval);
+      animationInterval = null;
+    }
+  }
 
   rec.onstart = ()=>{
     status.textContent = '🎤 Escuchando... (mantén presionado)';
-    status.style.color = '#c71e2f';
     btn.setAttribute('aria-pressed','true');
+    visualizer.classList.add('listening');
     isListening = true;
+    startBarsAnimation();
   };
 
   rec.onend = ()=>{
     isListening = false;
+    stopBarsAnimation();
+    visualizer.classList.remove('listening');
     
-    // Si debemos reiniciar (porque aún mantienen el botón)
     if(shouldRestart && btn.getAttribute('aria-pressed') === 'true'){
       try{ rec.start(); }catch(e){ console.log('No se pudo reiniciar:', e); }
       return;
     }
     
-    // Si hay texto acumulado, procesarlo
     if(fullTranscript.trim()){
       processTranscript(fullTranscript.trim());
       fullTranscript = '';
     } else {
-      status.textContent = 'Listo (presiona para hablar)';
-      status.style.color = '';
+      status.textContent = 'Presiona y mantén para hablar';
     }
     
     btn.setAttribute('aria-pressed','false');
@@ -52,8 +117,8 @@ export function initVoice(){
 
   rec.onerror = (e)=>{ 
     console.error('Error de reconocimiento:', e.error);
+    stopBarsAnimation();
     
-    // Errores que no son críticos
     if(e.error === 'no-speech'){
       status.textContent = '🔇 No se detectó voz, mantén presionado y habla';
       return;
@@ -81,31 +146,24 @@ export function initVoice(){
       }
     }
     
-    // Acumular texto final
     if(newFinal) fullTranscript += newFinal;
     
-    // Mostrar lo que llevamos + lo provisional
     const display = (fullTranscript + interim).trim();
     recoEl.textContent = display || 'Hablando...';
     
-    // Actualizar status con indicador de actividad
     if(display){
       status.textContent = '🎤 Te escucho... (mantén presionado)';
     }
   };
 
-  // ===== EVENTOS DE MOUSE/TOUCH =====
-  
-  // Presionar botón
+  // Eventos de mouse/touch
   btn.addEventListener('mousedown', startListening);
   btn.addEventListener('touchstart', startListening);
   
-  // Soltar botón
   btn.addEventListener('mouseup', stopListening);
   btn.addEventListener('touchend', stopListening);
-  btn.addEventListener('mouseleave', stopListening); // Si sale del botón
+  btn.addEventListener('mouseleave', stopListening);
   
-  // Click (modo toggle para móviles que lo prefieran)
   btn.addEventListener('click', (e)=>{
     e.preventDefault();
   });
@@ -113,7 +171,7 @@ export function initVoice(){
   function startListening(e){
     e.preventDefault();
     
-    if(isListening) return; // Ya está escuchando
+    if(isListening) return;
     
     recoEl.textContent = '';
     fullTranscript = '';
@@ -122,7 +180,6 @@ export function initVoice(){
     try{ 
       rec.start(); 
     } catch(err) { 
-      // Si ya está activo, ignorar
       if(err.message && err.message.includes('already started')){
         console.log('Ya está escuchando');
       } else {
@@ -144,8 +201,8 @@ export function initVoice(){
     if(!text) return;
     
     status.textContent = '⚙️ Procesando...';
-    status.style.color = '#f6c300';
     recoEl.textContent = `"${text}"`;
+    visualizer.classList.add('processing');
     
     fetch('/agent', {
       method:'POST',
@@ -154,21 +211,93 @@ export function initVoice(){
     })
     .then(r=>r.json())
     .then(data=>{
-      const answer = data?.answer || data?.message || 'Sin respuesta';
+      // Usar versión TTS si está disponible, sino limpiar la respuesta normal
+      const answer = data?.answer_tts || data?.message_tts || 
+                     data?.answer || data?.message || 'Sin respuesta';
+      
+      // DEBUG: Ver texto original vs limpio
+      console.log('--- TTS DEBUG ---');
+      console.log('Texto original:', answer);
+      const cleaned = cleanTextForSpeech(answer);
+      console.log('Texto limpio:', cleaned);
+      console.log('--- FIN DEBUG ---');
+      
+      visualizer.classList.remove('processing');
       speak(answer);
     })
     .catch(err=>{
       status.textContent = '❌ Error de red';
-      status.style.color = '#c71e2f';
+      visualizer.classList.remove('processing');
       console.error(err);
       
-      // Volver a estado listo después de 3 segundos
       setTimeout(()=>{
-        status.textContent = 'Listo (presiona para hablar)';
-        status.style.color = '';
+        status.textContent = 'Presiona y mantén para hablar';
         recoEl.textContent = '';
       }, 3000);
     });
+  }
+
+  function cleanTextForSpeech(text) {
+    if (!text) return '';
+    
+    let cleaned = text;
+    
+    // CRÍTICO: Eliminar markdown de forma más agresiva
+    // Primero eliminar ** (negrita)
+    cleaned = cleaned.replace(/\*\*/g, '');
+    
+    // Luego eliminar * (cursiva) - pero evitar multiplicaciones
+    cleaned = cleaned.replace(/\*([^*\n]+)\*/g, '$1');
+    cleaned = cleaned.replace(/\*/g, '');  // Eliminar asteriscos sueltos
+    
+    // Eliminar otros formatos
+    cleaned = cleaned.replace(/_([^_\n]+)_/g, '$1');  // _subrayado_
+    cleaned = cleaned.replace(/`([^`]+)`/g, '$1');     // `código`
+    cleaned = cleaned.replace(/~~([^~]+)~~/g, '$1');   // ~~tachado~~
+    cleaned = cleaned.replace(/#+ /g, '');             // ### headers
+    
+    // Eliminar enlaces [texto](url)
+    cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+    
+    // Eliminar listas
+    cleaned = cleaned.replace(/^\s*[-*+]\s+/gm, '');   // - item
+    cleaned = cleaned.replace(/^\s*\d+\.\s+/gm, '');   // 1. item
+    
+    // Eliminar emojis y símbolos especiales
+    cleaned = cleaned.replace(/[🎬🎭🎪🎨🎯🎵🎤🎧🎸🎹🎺🎻🎼📺💵🛒🔗⚠️✅❌]/g, '');
+    cleaned = cleaned.replace(/[#@$%^&{}[\]<>]/g, '');
+    
+    // Mejorar puntuación para pausas naturales
+    cleaned = cleaned.replace(/\n\n+/g, '. ');         // Párrafos
+    cleaned = cleaned.replace(/\n/g, ', ');            // Líneas
+    cleaned = cleaned.replace(/\s+/g, ' ');            // Espacios
+    
+    // Expandir abreviaciones comunes
+    cleaned = cleaned.replace(/\bej\./gi, 'ejemplo');
+    cleaned = cleaned.replace(/\betc\./gi, 'etcétera');
+    cleaned = cleaned.replace(/\bdr\./gi, 'doctor');
+    cleaned = cleaned.replace(/\bdra\./gi, 'doctora');
+    cleaned = cleaned.replace(/\bsra\./gi, 'señora');
+    cleaned = cleaned.replace(/\bsr\./gi, 'señor');
+    cleaned = cleaned.replace(/\bvs\./gi, 'versus');
+    cleaned = cleaned.replace(/\bp\.ej\./gi, 'por ejemplo');
+    
+    // Números ordinales
+    cleaned = cleaned.replace(/\b1º/g, 'primero');
+    cleaned = cleaned.replace(/\b2º/g, 'segundo');
+    cleaned = cleaned.replace(/\b3º/g, 'tercero');
+    cleaned = cleaned.replace(/\b(\d+)º/g, '$1');
+    
+    // Mejorar lectura de rangos
+    cleaned = cleaned.replace(/(\d+)\s*-\s*(\d+)/g, '$1 a $2');
+    
+    // Limpiar puntos suspensivos
+    cleaned = cleaned.replace(/\.{4,}/g, '...');
+    
+    // Limpiar dos puntos seguidos de espacio
+    cleaned = cleaned.replace(/:\s+/g, ': ');
+    
+    return cleaned.trim();
   }
 
   function speak(text){
@@ -177,30 +306,49 @@ export function initVoice(){
       return; 
     }
     
-    status.textContent = '🔊 Hablando...';
-    status.style.color = '#4a9eff';
+    // Limpiar texto antes de hablar
+    const cleanText = cleanTextForSpeech(text);
     
-    const utter = new SpeechSynthesisUtterance(text);
+    // OPCIÓN: Mostrar texto completo con scroll
+    recoEl.textContent = cleanText;
+    
+    status.textContent = '🔊 Hablando...';
+    visualizer.classList.add('speaking');
+    startBarsAnimation();
+    
+    const utter = new SpeechSynthesisUtterance(cleanText);
     utter.lang = 'es-ES';
-    utter.rate = 1.0;
+    utter.rate = 0.95;  // Ligeramente más lento para mejor comprensión
     utter.pitch = 1.0;
     utter.volume = 1.0;
     
+    // Usar la voz seleccionada si está disponible
+    if (selectedVoice) {
+      utter.voice = selectedVoice;
+    }
+    
+    // Dividir textos largos en fragmentos para mejor fluidez
+    if (cleanText.length > 300) {
+      utter.rate = 0.90; // Más lento para textos largos
+    }
+    
     utter.onend = ()=> {
-      status.textContent = 'Listo (presiona para hablar)';
-      status.style.color = '';
+      status.textContent = 'Presiona y mantén para hablar';
       recoEl.textContent = '';
+      visualizer.classList.remove('speaking');
+      stopBarsAnimation();
     };
     
     utter.onerror = (e)=>{
       console.error('Error TTS:', e);
       status.textContent = 'Error al hablar';
+      visualizer.classList.remove('speaking');
+      stopBarsAnimation();
     };
     
-    synth.cancel(); // Cancelar cualquier habla anterior
+    synth.cancel();
     synth.speak(utter);
   }
   
-  // Mensaje inicial
-  status.textContent = 'Listo (presiona y mantén para hablar)';
+  status.textContent = 'Presiona y mantén para hablar';
 }

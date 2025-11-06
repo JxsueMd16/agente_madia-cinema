@@ -939,3 +939,333 @@ dialog::backdrop {
     height: calc(100vh - 120px);
   }
 }
+
+/* ========================================
+   VOZ - INTERFAZ MODERNA CON VISUALIZADOR
+======================================== */
+.voice-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  min-height: calc(100vh - 150px);
+  padding: 48px;
+  position: relative;
+}
+
+/* Visualizador de audio tipo onda */
+.audio-visualizer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 200px;
+  position: relative;
+  padding: 20px;
+  background: var(--surface);
+  border-radius: 24px;
+  border: 2px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  transition: all 0.3s ease;
+}
+
+.audio-visualizer.listening {
+  border-color: var(--primary);
+  box-shadow: 0 0 40px rgba(139, 21, 56, 0.3);
+}
+
+.audio-visualizer.processing {
+  border-color: var(--accent);
+  box-shadow: 0 0 40px rgba(212, 175, 55, 0.3);
+}
+
+.audio-visualizer.speaking {
+  border-color: var(--secondary);
+  box-shadow: 0 0 40px rgba(196, 30, 58, 0.3);
+}
+
+.bar {
+  width: 10px;
+  background: linear-gradient(to top, var(--primary), var(--secondary));
+  border-radius: 10px;
+  height: 20px;
+  transition: height 0.1s ease, background 0.3s ease;
+  box-shadow: 0 0 10px rgba(139, 21, 56, 0.3);
+}
+
+.audio-visualizer.listening .bar {
+  background: linear-gradient(to top, var(--primary), var(--secondary));
+}
+
+.audio-visualizer.processing .bar {
+  background: linear-gradient(to top, var(--accent), #f6c300);
+}
+
+.audio-visualizer.speaking .bar {
+  background: linear-gradient(to top, var(--secondary), #ff6b9d);
+}
+
+.bar.active {
+  animation: barPulse 0.8s ease-in-out infinite;
+}
+
+@keyframes barPulse {
+  0%, 100% { 
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  50% { 
+    opacity: 0.8;
+    transform: scaleY(1.2);
+  }
+}
+
+/* Estado del voice */
+.voice-status {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  min-height: 32px;
+  padding: 12px 24px;
+  background: var(--surface);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s;
+}
+
+/* Controles */
+.voice-controls {
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.mic-btn {
+  width: 120px;
+  height: 120px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 12px 40px rgba(139, 21, 56, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.mic-btn::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  opacity: 0;
+  z-index: -1;
+  transition: all 0.4s;
+}
+
+.mic-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), transparent);
+  pointer-events: none;
+}
+
+.mic-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 16px 56px rgba(139, 21, 56, 0.6);
+}
+
+.mic-btn:hover::before {
+  opacity: 0.3;
+  inset: -20px;
+}
+
+.mic-btn:active {
+  transform: scale(0.95);
+}
+
+.mic-btn[aria-pressed="true"] {
+  animation: micPulseEnhanced 1.5s ease-in-out infinite;
+  background: var(--gradient-accent);
+}
+
+@keyframes micPulseEnhanced {
+  0%, 100% {
+    box-shadow: 0 12px 40px rgba(139, 21, 56, 0.4),
+                0 0 0 0 rgba(139, 21, 56, 0.6);
+  }
+  50% {
+    box-shadow: 0 12px 40px rgba(139, 21, 56, 0.4),
+                0 0 0 30px rgba(139, 21, 56, 0);
+  }
+}
+
+.mic-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+}
+
+.mic-btn svg {
+  width: 100%;
+  height: 100%;
+  fill: white;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  transition: transform 0.3s;
+}
+
+.mic-btn:hover svg {
+  transform: scale(1.15);
+}
+
+.mic-btn[aria-pressed="true"] svg {
+  animation: micWiggle 0.6s ease infinite;
+}
+
+@keyframes micWiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-10deg) scale(1.1); }
+  75% { transform: rotate(10deg) scale(1.1); }
+}
+
+/* Texto reconocido */
+.voice-reco {
+  min-height: 100px;
+  max-height: 300px; /* Altura máxima antes de hacer scroll */
+  max-width: 700px;
+  width: 100%;
+  padding: 28px 36px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 24px;
+  font-size: 19px;
+  font-weight: 500;
+  text-align: center;
+  color: var(--text);
+  line-height: 1.7;
+  box-shadow: var(--shadow-lg);
+  word-break: break-word;
+  transition: all 0.3s ease;
+  overflow-y: auto; /* Permite scroll vertical */
+  overflow-x: hidden; /* Sin scroll horizontal */
+}
+
+/* Scroll personalizado para el texto */
+.voice-reco::-webkit-scrollbar {
+  width: 8px;
+}
+
+.voice-reco::-webkit-scrollbar-track {
+  background: var(--bg);
+  border-radius: 10px;
+}
+
+.voice-reco::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 10px;
+}
+
+.voice-reco::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
+}
+
+.voice-reco:not(:empty) {
+  border-color: var(--primary);
+  background: linear-gradient(135deg, #fdf5f7 0%, #ffffff 100%);
+}
+
+/* Partículas decorativas (opcional) */
+.voice-stage::before {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(139, 21, 56, 0.1), transparent);
+  border-radius: 50%;
+  animation: float 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.voice-stage::after {
+  content: '';
+  position: absolute;
+  bottom: 10%;
+  right: 10%;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(196, 30, 58, 0.1), transparent);
+  border-radius: 50%;
+  animation: float 8s ease-in-out infinite reverse;
+  pointer-events: none;
+}
+
+/* ========================================
+   RESPONSIVE - VOZ
+======================================== */
+@media (max-width: 920px) {
+  .voice-stage {
+    padding: 24px;
+    gap: 32px;
+  }
+
+  .audio-visualizer {
+    height: 150px;
+    gap: 6px;
+  }
+
+  .bar {
+    width: 8px;
+  }
+
+  .mic-btn {
+    width: 100px;
+    height: 100px;
+  }
+
+  .mic-icon-wrapper {
+    width: 40px;
+    height: 40px;
+  }
+
+  .voice-reco {
+    font-size: 17px;
+    padding: 24px 28px;
+  }
+}
+
+@media (max-width: 640px) {
+  .audio-visualizer {
+    height: 120px;
+    gap: 4px;
+  }
+
+  .bar {
+    width: 6px;
+  }
+
+  .mic-btn {
+    width: 90px;
+    height: 90px;
+  }
+
+  .voice-status {
+    font-size: 16px;
+  }
+
+  .voice-reco {
+    font-size: 16px;
+    padding: 20px 24px;
+    min-height: 80px;
+  }
+}
